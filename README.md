@@ -58,10 +58,10 @@ W build.gradle wskazujemy:
 
 * wskazujemy repozytoria maven (lokalne oraz globalne)
   
-	repositories {
-	  mavenLocal()
-	  mavenCentral()
-	}
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
 
 * wskazujemy zaleźności z bibliotekami (zależności na etapie kompilacji przenoszą się na etapu uruchomienia). Dla ułatwienia wykorzystujemy projekt lombok, pozwalający na wykorzystanie annotacji do automatycznego wygenerowani metod get/set/constructor.
 
@@ -69,7 +69,6 @@ W build.gradle wskazujemy:
 	  compile(
 	    // PROJECT LOMBOK FOR FINE GETTERS AND SETTERS
 	    [group: "org.projectlombok", name: "lombok", version: "0.11.4"],
-	    
 	    // LOGGING CLASSES
 	    [group: "org.slf4j", name: "slf4j-api", version: "1.6.4"],
 	    [group: "ch.qos.logback", name: "logback-classic", version: "1.0.0"],
