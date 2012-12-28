@@ -57,7 +57,7 @@ W build.gradle wskazujemy:
 > apply plugin: 'java'
 
 * wskazujemy repozytoria maven (lokalne oraz globalne)
-  
+
   repositories {
     mavenLocal()
     mavenCentral()
@@ -77,14 +77,14 @@ W build.gradle wskazujemy:
 
 * wskazujemy, gdzie po wywołaniu gradle install ma być umieszczony wynikowy plik jar
 
-    uploadArchives {
-      repositories {
-        mavenDeployer {
-          repository(url: "file:///${userHome}/.m2/repository")
-        }
+  uploadArchives {
+    repositories {
+      mavenDeployer {
+        repository(url: "file:///${userHome}/.m2/repository")
       }
     }
-    uploadArchives.dependsOn "jar"
+  }
+  uploadArchives.dependsOn "jar"
 
 Encja płatności zdefiniowana została w pliku Payment.java (main/java/src/org/be3form/coreservices/data). Płatność przekazana do autoryzacji powinna zawierać atrybuty id, amount (kwota transakcji) oraz authorizationCode (sekretny kod z urządzenia mobilnego). Jako wynik autoryzacji uzupełnione zostaną atrybuty authorizationResult (wynik autoryzacji) oraz numer rachunku w przypadku autoryzacji pozytywnej.
 
