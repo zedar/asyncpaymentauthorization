@@ -1,0 +1,34 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'org.be3form.coreservices'
+
+ext{ 
+  userHome = System.getProperty("user.home")
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+
+dependencies {
+  compile(
+    // PROJECT LOMBOK FOR FINE GETTERS AND SETTERS
+    [group: "org.projectlombok", name: "lombok", version: "0.11.4"],
+    
+    // LOGGING CLASSES
+    [group: "org.slf4j", name: "slf4j-api", version: "1.6.4"],
+    [group: "ch.qos.logback", name: "logback-classic", version: "1.0.0"],
+  )
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      repository(url: "file:///${userHome}/.m2/repository")
+    }
+  }
+}
+uploadArchives.dependsOn "jar"

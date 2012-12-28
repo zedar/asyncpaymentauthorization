@@ -1,0 +1,51 @@
+apply plugin: 'java'
+apply plugin: 'war'
+
+group = 'paymentauthorization'
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+configurations {
+  jetty8
+}
+
+dependencies {
+  compile (
+    [group: 'org.springframework', name: 'spring-web', version: '3.1.2.RELEASE'],
+
+    // CORESERVICES DATA BEANS
+    [group: "org.be3form.coreservices", name: "coreservices-data", version: "0.1"],
+    // THIS APPLICATION IS ACTIVEMQ CLIENT
+    [group: "org.apache.activemq", name: "activemq-core", version: "5.6.0"],
+    // ADDITIONAL XSD SCHEMA NAMESPACE HANDLER
+    [group: "org.apache.xbean", name: "xbean-spring", version: "3.11.1"],
+    // SPRING INTEGRATION
+    [group: "org.springframework.integration", name: "spring-integration-jms", version: "2.2.0.RELEASE"],
+
+    // LOGGING CLASSES
+    [group: "org.slf4j", name: "slf4j-api", version: "1.6.4"],
+    [group: "ch.qos.logback", name: "logback-classic", version: "1.0.0"],
+  )
+
+  providedCompile (
+    // servlet 3.0 libraries, just for compilation. In runtime we use libraries from jetty web server
+    [group: 'javax.servlet', name: 'javax.servlet-api', version: '3.0.1'],
+  )
+
+  // gradle does not support version 7+, so we have to create our own configuration
+  jetty8 (
+    [group: 'org.mortbay.jetty', name: 'jetty-runner', version: '8.1.5.v20120716'],
+    // LOGGING CLASSES
+    [group: "org.slf4j", name: "slf4j-api", version: "1.6.4"],
+    [group: "ch.qos.logback", name: "logback-classic", version: "1.0.0"],
+  )
+}
+
+task jetty8Run(type: JavaExec, dependsOn: assemble) {
+  main = "org.mortbay.jetty.runner.Runner"
+  args = ["--path", war.baseName, war.archivePath]
+  classpath configurations.jetty8
+}

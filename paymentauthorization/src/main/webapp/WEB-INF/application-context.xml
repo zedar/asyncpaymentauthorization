@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:jms="http://www.springframework.org/schema/integration/jms"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd
+       http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+       http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+       http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.6.0.xsd">
+
+  <context:annotation-config/>
+
+  <context:component-scan base-package="org.be3form"/>
+
+  <!-- define spring thread pool task executor -->
+  <task:executor id="paymentExecutor" pool-size="2" rejection-policy="CALLER_RUNS" />
+
+  <!-- SPRING INTEGRATION WITH ACTIVEMQ -->
+  <!-- define connection factory. The name is important: connectionFactory could be resolved automatically by channel definitions -->
+  <bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+    <property name="targetConnectionFactory">
+      <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://localhost:61616"/>
+      </bean>
+    </property>
+    <property name="sessionCacheSize" value="10"/>
+    <property name="cacheProducers" value="false"/>
+  </bean>
+
+  <!-- request queue -->
+  <bean id="payAuthRequestQueue" class="org.apache.activemq.command.ActiveMQQueue">
+    <constructor-arg value="PAY_AUTH_REQ_Q"/>
+  </bean>
+
+  <jms:outbound-channel-adapter id="jmsPayAuthRequestChannel" destination="payAuthRequestQueue" channel="payAuthChannel"/>
+
+  <int:channel id="payAuthChannel" />
+
+  <int:gateway id="paymentAuthorizationGateway" 
+      service-interface="org.be3form.service.PaymentAuthorizationGateway" 
+      default-request-channel="payAuthChannel" />
+
+  <!-- response queue -->
+  <bean id="payAuthResponseQueue" class="org.apache.activemq.command.ActiveMQQueue">
+    <constructor-arg value="PAY_AUTH_RSP_Q"/>
+  </bean>
+
+  <jms:message-driven-channel-adapter id="jmsPayAuthResponseChannel" destination="payAuthResponseQueue" channel="payAuthResponseChannel" />
+
+  <int:channel id="payAuthResponseChannel"/>
+  
+  <int:service-activator input-channel="payAuthResponseChannel" ref="paymentAuthorizationService" method="handlePaymentAuthorizationResponse" />
+
+</beans>
+

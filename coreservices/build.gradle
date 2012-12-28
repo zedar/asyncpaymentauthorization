@@ -1,0 +1,34 @@
+apply plugin: 'java'
+
+group = 'coreservices'
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  compile(
+    [group: "org.apache.activemq", name: "activemq-core", version: "5.6.0"],
+    
+    // SCHEMA DRIVEN PROPRIETARY NAMESPACE HANDLER
+    [group: "org.apache.xbean", name: "xbean-spring", version: "3.11.1"],
+    
+    // SPRING INTEGRATION
+    [group: "org.springframework.integration", name: "spring-integration-jms", version: "2.2.0.RELEASE"],
+    
+    // CORESERVICES DATA BEANS
+    [group: "org.be3form.coreservices", name: "coreservices-data", version: "0.1"],
+
+    // LOGGING CLASSES
+    [group: "org.slf4j", name: "slf4j-api", version: "1.6.4"],
+    [group: "ch.qos.logback", name: "logback-classic", version: "1.0.0"],
+  )
+}
+
+task runApp(type: JavaExec, dependsOn: classes) {
+  main = "org.be3form.coreservices.CoreServicesApp"
+  classpath = sourceSets.main.runtimeClasspath
+  // by default gradle sets standard input to empty stdin for child processes
+  standardInput = System.in
+}

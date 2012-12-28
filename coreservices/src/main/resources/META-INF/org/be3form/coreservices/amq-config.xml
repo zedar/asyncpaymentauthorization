@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:jms="http://www.springframework.org/schema/integration/jms"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/integration
+           http://www.springframework.org/schema/integration/spring-integration.xsd
+           http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+           http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.6.0.xsd">
+  
+  <context:annotation-config/>        
+
+  <context:component-scan base-package="org.be3form"/>
+
+  <!-- start activemq broker -->
+  <!-- in order to test if activemq is running execute: netstat -an | grep 61616 -->
+  <amq:broker brokerName="coreservices" useJmx="true" persistent="false">
+    <amq:transportConnectors>
+      <amq:transportConnector name="openwire" uri="tcp://localhost:61616"/>
+    </amq:transportConnectors>
+  </amq:broker>
+
+  <!-- define connection factory. The name is important: connectionFactory could be resolved automatically by channel definitions -->
+  <bean id="connectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+    <property name="targetConnectionFactory">
+      <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="tcp://localhost:61616"/>
+        <!-- IMPORTANT: because cunsumers are long running so we have to setup prefetch size to 0. It means that consumer will
+             get only one message and no more messages will be buffered on the customer side.
+             This is a place to setup prefetch policy globally for all queues -->
+        <!--<property name="prefetchPolicy">-->
+          <!--<bean class="org.apache.activemq.ActiveMQPrefetchPolicy">-->
+            <!--<property name="queuePrefetch" value="0" />-->
+          <!--</bean>-->
+        <!--</property>-->
+      </bean>
+    </property>
+    <property name="sessionCacheSize" value="10"/>
+    <property name="cacheProducers" value="false"/>
+  </bean>
+
+  <!-- input queue definition -->
+  <!-- IMPORTANT: because cunsumers are long running so we have to setup prefetch size to 0. It means that consumer will
+       get only one message and no more messages will be buffered on the customer side.
+       This is a place to setup prefetch policy for a specific queues -->
+  <bean id="payAuthQueue" class="org.apache.activemq.command.ActiveMQQueue">
+    <constructor-arg value="PAY_AUTH_REQ_Q?consumer.prefetchSize=0"/>
+  </bean>
+  <!-- message driven channel addapter -->
+  <jms:message-driven-channel-adapter id="jmsPayAuthChannel" destination="payAuthQueue" channel="payAuthChannel" 
+                                      concurrent-consumers="1"
+                                      max-concurrent-consumers="100"
+                                      />
+  <!-- define channel with jms backend and pooling settings (this gives us controll over how many separate instances handle messages) -->
+  <int:channel id="payAuthChannel"/>
+  <!-- define service activator for payment authorization -->
+  <int:service-activator id="payAuthActivator" input-channel="payAuthChannel" ref="paymentAuthorizationService" method="authorize"/>
+
+  <!-- outbound queue definition -->
+  <bean id="payAuthResponseQueue" class="org.apache.activemq.command.ActiveMQQueue">
+    <constructor-arg value="PAY_AUTH_RSP_Q"/>
+  </bean>
+
+  <jms:outbound-channel-adapter id="jmsPayAuthResponseChannel" destination="payAuthResponseQueue" channel="payAuthResponseChannel"/>
+
+  <int:channel id="payAuthResponseChannel" />
+
+  <int:gateway id="paymentAuthorizationResponseGateway" 
+      service-interface="org.be3form.coreservices.service.PaymentAuthorizationResponseGateway" 
+      default-request-channel="payAuthResponseChannel" />
+
+</beans>
